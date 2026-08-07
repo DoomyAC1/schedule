@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Almanac — Yearly Schedule & Resolutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,500;1,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0e13;
+    --bg-2:#12151d;
+    --surface:#171b26;
+    --surface-hover:#1d2230;
+    --border:#262c3a;
+    --border-soft:#1c2130;
+    --text:#ece7d8;
+    --text-dim:#8f8a7a;
+    --text-faint:#52504a;
+    --gold:#cc9a48;
+    --gold-bright:#e0b466;
+    --gold-soft:rgba(204,154,72,0.16);
+    --sage:#7f9a72;
+    --rust:#b8635f;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    scrollbar-color:var(--border) var(--bg);
+    scrollbar-width:thin;
+  }
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-track{ background:var(--bg); }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+  ::-webkit-scrollbar-thumb:hover{ background:var(--text-faint); }
+
+  button, input{ font-family:inherit; }
+  button{ cursor:pointer; }
+  button:focus-visible, input:focus-visible, .day:focus-visible{
+    outline:2px solid var(--gold); outline-offset:2px; border-radius:4px;
+  }
+
+  .page{
+    max-width:1100px; margin:0 auto; padding:48px 32px 80px;
+    opacity:0; animation:reveal .5s ease forwards;
+  }
+  @keyframes reveal{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:translateY(0);} }
+
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--gold);
+  }
+  .mast-top{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-top:10px; flex-wrap:wrap; gap:16px;
+  }
+  .year-nav{ display:flex; align-items:center; gap:14px; }
+  .year-label{
+    font-family:'Fraunces', serif; font-weight:600; font-style:italic;
+    font-size:56px; color:var(--text); letter-spacing:-0.01em;
+    min-width:150px; text-align:center;
+  }
+  .year-btn{
+    background:none; border:1px solid var(--border); color:var(--text-dim);
+    width:36px; height:36px; border-radius:8px; font-size:18px;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .year-btn:hover{ border-color:var(--gold); color:var(--gold); }
+
+  .thread-wrap{ margin:30px 0 22px; }
+  .thread-track{ position:relative; height:4px; background:var(--border-soft); border-radius:2px; margin-top:4px; }
+  .thread-fill{
+    position:absolute; left:0; top:0; height:100%; background:var(--gold);
+    border-radius:2px; width:0%; transition:width .5s ease;
+  }
+  .thread-ticks{ position:absolute; inset:0; }
+  .tick{ position:absolute; top:-4px; width:1px; height:12px; background:var(--border); }
+  .thread-marker{
+    position:absolute; top:50%; width:10px; height:10px; border-radius:50%;
+    background:var(--gold-bright); box-shadow:0 0 0 5px var(--gold-soft);
+    transform:translate(-50%,-50%); transition:left .5s ease; display:none;
+  }
+  .thread-label{
+    margin-top:10px; font-family:'JetBrains Mono', monospace; font-size:11px;
+    color:var(--text-dim); letter-spacing:.02em;
+  }
+
+  .tabs{ display:flex; gap:24px; border-bottom:1px solid var(--border); margin-top:8px; }
+  .tab-btn{
+    background:none; border:none; color:var(--text-faint); font-size:13px;
+    font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+    padding:10px 2px; position:relative; transition:color .15s ease;
+  }
+  .tab-btn:hover:not(.active){ color:var(--text-dim); }
+  .tab-btn.active{ color:var(--gold); }
+  .tab-btn.active::after{
+    content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--gold);
+  }
+
+  main{ margin-top:32px; }
+  .loading{
+    text-align:center; padding:60px 0; color:var(--text-faint);
+    font-family:'JetBrains Mono', monospace; font-size:13px; letter-spacing:.03em;
+  }
+
+  .months-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:20px; }
+  .month-card{
+    background:var(--surface); border:1px solid var(--border-soft); border-radius:10px;
+    padding:18px 18px 14px; transition:border-color .15s ease;
+  }
+  .month-card:hover{ border-color:var(--border); }
+  .month-card h3{
+    font-family:'Fraunces', serif; font-style:italic; font-weight:500;
+    font-size:18px; color:var(--text); margin-bottom:12px;
+  }
+  .weekdays{ display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:6px; }
+  .weekdays span{
+    font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--text-faint);
+    text-align:center; letter-spacing:.05em;
+  }
+  .days{ display:grid; grid-template-columns:repeat(7,1fr); row-gap:4px; }
+  .day{
+    position:relative; aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--text-dim);
+    border-radius:6px; transition:background .12s ease, color .12s ease;
+  }
+  .day:not(.empty){ cursor:pointer; }
+  .day:not(.empty):hover{ background:var(--surface-hover); color:var(--text); }
+  .day.today{ color:var(--bg); background:var(--gold); font-weight:600; }
+  .day.today:hover{ background:var(--gold-bright); }
+  .day.has-event::after{
+    content:''; position:absolute; bottom:3px; left:50%; transform:translateX(-50%);
+    width:4px; height:4px; border-radius:50%; background:var(--gold);
+  }
+  .day.today.has-event::after{ background:var(--bg); }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(8,9,13,.72); backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none;
+    transition:opacity .18s ease; z-index:50; padding:20px;
+  }
+  .modal-overlay.open{ opacity:1; pointer-events:auto; }
+  .modal{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    width:min(420px,100%); max-height:80vh; overflow:auto; padding:24px;
+    transform:translateY(8px); transition:transform .18s ease;
+  }
+  .modal-overlay.open .modal{ transform:translateY(0); }
+  .modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; }
+  .modal-head h2{
+    font-family:'Fraunces', serif; font-style:italic; font-weight:500; font-size:19px; color:var(--text);
+  }
+
+  .icon-btn{
+    background:none; border:none; color:var(--text-faint); font-size:14px;
+    padding:4px 8px; border-radius:6px; transition:color .12s ease, background .12s ease; flex-shrink:0;
+  }
+  .icon-btn:hover{ color:var(--rust); background:var(--surface-hover); }
+
+  .modal-events{ display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+  .event-item{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    background:var(--bg-2); border:1px solid var(--border-soft); border-radius:8px;
+    padding:9px 8px 9px 12px; font-size:13px; color:var(--text);
+  }
+  .empty-msg{ color:var(--text-faint); font-size:13px; font-style:italic; padding:8px 0; }
+
+  .add-row{ display:flex; gap:8px; }
+  .add-row input{
+    flex:1; background:var(--bg-2); border:1px solid var(--border); border-radius:8px;
+    padding:10px 12px; color:var(--text); font-size:13px;
+  }
+  .add-row input::placeholder{ color:var(--text-faint); }
+  .add-row input:focus{ outline:none; border-color:var(--gold); }
+  .add-row button{
+    background:var(--gold); border:none; color:var(--bg); font-weight:600; font-size:13px;
+    padding:0 18px; border-radius:8px; transition:background .12s ease;
+  }
+  .add-row button:hover{ background:var(--gold-bright); }
+
+  .resolutions-view{ max-width:640px; }
+  .progress-row{ display:flex; align-items:center; gap:14px; margin:22px 0 26px; }
+  .progress-track{ flex:1; height:4px; background:var(--border-soft); border-radius:2px; overflow:hidden; }
+  .progress-fill{ height:100%; background:var(--gold); width:0%; transition:width .3s ease; }
+  .progress-label{
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--text-dim); white-space:nowrap;
+  }
+
+  .resolutions-list{ display:flex; flex-direction:column; gap:2px; }
+  .resolution-item{
+    display:flex; align-items:center; gap:12px; padding:13px 4px; border-bottom:1px solid var(--border-soft);
+  }
+  .resolution-item .res-text{
+    flex:1; font-family:'Fraunces', serif; font-size:16px; color:var(--text); transition:color .15s ease;
+  }
+  .resolution-item.done .res-text{ color:var(--text-faint); text-decoration:line-through; }
+
+  .checkbox{ position:relative; width:20px; height:20px; flex-shrink:0; cursor:pointer; }
+  .checkbox input{ position:absolute; opacity:0; width:100%; height:100%; cursor:pointer; margin:0; }
+  .checkmark{
+    position:absolute; inset:0; border:1.5px solid var(--text-faint); border-radius:50%;
+    transition:all .15s ease; pointer-events:none;
+  }
+  .checkbox input:checked + .checkmark{ background:var(--gold); border-color:var(--gold); }
+
+  footer.foot{ margin-top:60px; text-align:center; }
+  .text-btn{
+    background:none; border:none; color:var(--text-faint); font-size:12px;
+    text-decoration:underline; text-underline-offset:3px; transition:color .12s ease;
+  }
+  .text-btn:hover{ color:var(--rust); }
+  .text-btn.confirm{ color:var(--rust); }
+
+  @media (max-width:640px){
+    .page{ padding:32px 18px 60px; }
+    .year-label{ font-size:38px; min-width:auto; }
+    .months-grid{ grid-template-columns:1fr; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="masthead">
+    <span class="eyebrow">Personal Almanac</span>
+    <div class="mast-top">
+      <div class="year-nav">
+        <button id="prevYear" class="year-btn" aria-label="Previous year">‹</button>
+        <h1 id="yearLabel" class="year-label">2026</h1>
+        <button id="nextYear" class="year-btn" aria-label="Next year">›</button>
+      </div>
+    </div>
+    <div class="thread-wrap">
+      <div class="thread-track">
+        <div id="threadFill" class="thread-fill"></div>
+        <div id="threadTicks" class="thread-ticks"></div>
+        <div id="threadMarker" class="thread-marker"></div>
+      </div>
+      <p id="threadLabel" class="thread-label"></p>
+    </div>
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="schedule">Schedule</button>
+      <button class="tab-btn" data-tab="resolutions">Resolutions</button>
+    </nav>
+  </header>
+
+  <main>
+    <div id="loadingIndicator" class="loading">Loading your almanac…</div>
+    <section id="scheduleView" class="months-grid" style="display:none;"></section>
+    <section id="resolutionsView" class="resolutions-view" style="display:none;">
+      <form id="resolutionForm" class="add-row">
+        <input id="newResolutionInput" placeholder="Add a resolution for this year…" autocomplete="off">
+        <button type="submit">Add</button>
+      </form>
+      <div class="progress-row">
+        <div class="progress-track"><div id="progressFill" class="progress-fill"></div></div>
+        <span id="progressLabel" class="progress-label"></span>
+      </div>
+      <div id="resolutionsList" class="resolutions-list"></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <button id="resetBtn" class="text-btn">Clear this year's data</button>
+  </footer>
+</div>
+
+<div id="modalOverlay" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalDate"></h2>
+      <button id="modalClose" class="icon-btn" aria-label="Close">✕</button>
+    </div>
+    <div id="modalEventsList" class="modal-events"></div>
+    <form id="eventForm" class="add-row">
+      <input id="newEventInput" placeholder="Add a note for this day…" autocomplete="off">
+      <button type="submit">Add</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const WEEKDAY_LABELS = ["S","M","T","W","T","F","S"];
+
+  const state = {
+    year: new Date().getFullYear(),
+    events: {},
+    resolutions: [],
+    activeTab: 'schedule',
+    activeDate: null
+  };
+
+  function isLeapYear(y){ return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0; }
+  function daysInYear(y){ return isLeapYear(y) ? 366 : 365; }
+  function daysInMonth(y, m){ return new Date(y, m + 1, 0).getDate(); }
+  function firstDayOfWeek(y, m){ return new Date(y, m, 1).getDay(); }
+  function dayOfYear(date){
+    const start = new Date(date.getFullYear(), 0, 0);
+    return Math.floor((date - start) / 86400000);
+  }
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  async function loadData(year){
+    document.getElementById('loadingIndicator').style.display = 'block';
+    document.getElementById('scheduleView').style.display = 'none';
+    document.getElementById('resolutionsView').style.display = 'none';
+
+    let events = {};
+    let resolutions = [];
+    try {
+      const res = await window.storage.get(`events-${year}`, false);
+      if (res && res.value) events = JSON.parse(res.value);
+    } catch (e) { /* no saved events yet */ }
+    try {
+      const res = await window.storage.get(`resolutions-${year}`, false);
+      if (res && res.value) resolutions = JSON.parse(res.value);
+    } catch (e) { /* no saved resolutions yet */ }
+
+    state.events = events;
+    state.resolutions = resolutions;
+
+    document.getElementById('loadingIndicator').style.display = 'none';
+    renderAll();
+    applyTabVisibility();
+  }
+
+  async function saveEvents(){
+    try { await window.storage.set(`events-${state.year}`, JSON.stringify(state.events), false); }
+    catch (e) { console.error('Failed to save events', e); }
+  }
+  async function saveResolutions(){
+    try { await window.storage.set(`resolutions-${state.year}`, JSON.stringify(state.resolutions), false); }
+    catch (e) { console.error('Failed to save resolutions', e); }
+  }
+
+  function renderAll(){
+    renderThread();
+    renderCalendar();
+    renderResolutions();
+  }
+
+  function renderThread(){
+    const total = daysInYear(state.year);
+    const today = new Date();
+    const curYear = today.getFullYear();
+    let elapsed, label;
+    if (state.year < curYear){ elapsed = total; label = 'Year complete'; }
+    else if (state.year > curYear){ elapsed = 0; label = 'Year not yet begun'; }
+    else {
+      elapsed = dayOfYear(today);
+      const pct = Math.round((elapsed / total) * 100);
+      label = `Day ${elapsed} of ${total} — ${pct}% through the year`;
+    }
+    const pct = (elapsed / total) * 100;
+    document.getElementById('threadFill').style.width = pct + '%';
+    document.getElementById('threadLabel').textContent = label;
+
+    const marker = document.getElementById('threadMarker');
+    if (state.year === curYear){ marker.style.display = 'block'; marker.style.left = pct + '%'; }
+    else { marker.style.display = 'none'; }
+
+    const ticksEl = document.getElementById('threadTicks');
+    ticksEl.innerHTML = '';
+    for (let m = 1; m < 12; m++){
+      const d = new Date(state.year, m, 1);
+      const x = (dayOfYear(d) / total) * 100;
+      const t = document.createElement('div');
+      t.className = 'tick';
+      t.style.left = x + '%';
+      ticksEl.appendChild(t);
+    }
+  }
+
+  function renderCalendar(){
+    const grid = document.getElementById('scheduleView');
+    grid.innerHTML = '';
+    const today = new Date();
+    const isCurrentYear = today.getFullYear() === state.year;
+
+    for (let m = 0; m < 12; m++){
+      const numDays = daysInMonth(state.year, m);
+      const startDay = firstDayOfWeek(state.year, m);
+      let daysHtml = '';
+      for (let i = 0; i < startDay; i++) daysHtml += `<div class="day empty"></div>`;
+      for (let d = 1; d <= numDays; d++){
+        const dateStr = `${state.year}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const hasEvents = state.events[dateStr] && state.events[dateStr].length > 0;
+        const isToday = isCurrentYear && today.getMonth() === m && today.getDate() === d;
+        const dateObj = new Date(state.year, m, d);
+        const label = dateObj.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+        daysHtml += `<div class="day${isToday ? ' today' : ''}${hasEvents ? ' has-event' : ''}" data-date="${dateStr}" tabindex="0" role="button" aria-label="${label}${hasEvents ? ', has notes' : ''}"><span>${d}</span></div>`;
+      }
+      const monthEl = document.createElement('div');
+      monthEl.className = 'month-card';
+      monthEl.innerHTML = `
+        <h3>${MONTH_NAMES[m]}</h3>
+        <div class="weekdays">${WEEKDAY_LABELS.map(w => `<span>${w}</span>`).join('')}</div>
+        <div class="days">${daysHtml}</div>
+      `;
+      grid.appendChild(monthEl);
+    }
+
+    grid.querySelectorAll('.day:not(.empty)').forEach(el => {
+      el.addEventListener('click', () => openDayModal(el.dataset.date));
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          openDayModal(el.dataset.date);
+        }
+      });
+    });
+  }
+
+  function openDayModal(dateStr){
+    state.activeDate = dateStr;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    document.getElementById('modalDate').textContent = dateObj.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+    renderModalEvents();
+    document.getElementById('modalOverlay').classList.add('open');
+    const input = document.getElementById('newEventInput');
+    input.value = '';
+    setTimeout(() => input.focus(), 50);
+  }
+
+  function closeModal(){
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+
+  function renderModalEvents(){
+    const list = document.getElementById('modalEventsList');
+    const evts = state.events[state.activeDate] || [];
+    if (evts.length === 0){
+      list.innerHTML = `<p class="empty-msg">No notes yet</p>`;
+    } else {
+      list.innerHTML = evts.map((text, idx) => `
+        <div class="event-item">
+          <span>${escapeHtml(text)}</span>
+          <button class="icon-btn" data-idx="${idx}" aria-label="Delete note">✕</button>
+        </div>`).join('');
+      list.querySelectorAll('.icon-btn').forEach(btn => {
+        btn.addEventListener('click', () => deleteEvent(Number(btn.dataset.idx)));
+      });
+    }
+  }
+
+  function addEvent(){
+    const input = document.getElementById('newEventInput');
+    const text = input.value.trim();
+    if (!text) return;
+    if (!state.events[state.activeDate]) state.events[state.activeDate] = [];
+    state.events[state.activeDate].push(text);
+    input.value = '';
+    renderModalEvents();
+    renderCalendar();
+    saveEvents();
+  }
+
+  function deleteEvent(idx){
+    state.events[state.activeDate].splice(idx, 1);
+    if (state.events[state.activeDate].length === 0) delete state.events[state.activeDate];
+    renderModalEvents();
+    renderCalendar();
+    saveEvents();
+  }
+
+  function renderResolutions(){
+    const list = document.getElementById('resolutionsList');
+    const resolutions = state.resolutions;
+    if (resolutions.length === 0){
+      list.innerHTML = `<p class="empty-msg">No resolutions yet — add your first one above.</p>`;
+    } else {
+      list.innerHTML = resolutions.map(r => `
+        <div class="resolution-item${r.done ? ' done' : ''}">
+          <label class="checkbox">
+            <input type="checkbox" ${r.done ? 'checked' : ''} data-id="${r.id}">
+            <span class="checkmark"></span>
+          </label>
+          <span class="res-text">${escapeHtml(r.text)}</span>
+          <button class="icon-btn" data-id="${r.id}" aria-label="Delete resolution">✕</button>
+        </div>`).join('');
+      list.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', () => toggleResolution(cb.dataset.id));
+      });
+      list.querySelectorAll('button.icon-btn').forEach(btn => {
+        btn.addEventListener('click', () => deleteResolution(btn.dataset.id));
+      });
+    }
+    const total = resolutions.length;
+    const done = resolutions.filter(r => r.done).length;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressLabel').textContent = total ? `${done} of ${total} kept (${pct}%)` : 'Add a resolution to get started';
+  }
+
+  function addResolution(){
+    const input = document.getElementById('newResolutionInput');
+    const text = input.value.trim();
+    if (!text) return;
+    state.resolutions.push({ id: 'r' + Date.now() + Math.random().toString(36).slice(2, 7), text, done: false });
+    input.value = '';
+    renderResolutions();
+    saveResolutions();
+  }
+
+  function toggleResolution(id){
+    const r = state.resolutions.find(x => x.id === id);
+    if (r) r.done = !r.done;
+    renderResolutions();
+    saveResolutions();
+  }
+
+  function deleteResolution(id){
+    state.resolutions = state.resolutions.filter(x => x.id !== id);
+    renderResolutions();
+    saveResolutions();
+  }
+
+  function applyTabVisibility(){
+    document.getElementById('scheduleView').style.display = state.activeTab === 'schedule' ? 'grid' : 'none';
+    document.getElementById('resolutionsView').style.display = state.activeTab === 'resolutions' ? 'block' : 'none';
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === state.activeTab));
+  }
+
+  function switchTab(tab){
+    state.activeTab = tab;
+    applyTabVisibility();
+  }
+
+  function changeYear(delta){
+    state.year += delta;
+    document.getElementById('yearLabel').textContent = state.year;
+    loadData(state.year);
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('yearLabel').textContent = state.year;
+    loadData(state.year);
+
+    document.getElementById('eventForm').addEventListener('submit', e => { e.preventDefault(); addEvent(); });
+    document.getElementById('resolutionForm').addEventListener('submit', e => { e.preventDefault(); addResolution(); });
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target.id === 'modalOverlay') closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+    document.getElementById('prevYear').addEventListener('click', () => changeYear(-1));
+    document.getElementById('nextYear').addEventListener('click', () => changeYear(1));
+    document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+    let resetArmed = false, resetTimer = null;
+    const resetBtn = document.getElementById('resetBtn');
+    resetBtn.addEventListener('click', () => {
+      if (!resetArmed){
+        resetArmed = true;
+        resetBtn.textContent = 'Click again to confirm';
+        resetBtn.classList.add('confirm');
+        resetTimer = setTimeout(() => {
+          resetArmed = false;
+          resetBtn.textContent = "Clear this year's data";
+          resetBtn.classList.remove('confirm');
+        }, 3000);
+      } else {
+        clearTimeout(resetTimer);
+        resetArmed = false;
+        resetBtn.textContent = "Clear this year's data";
+        resetBtn.classList.remove('confirm');
+        state.events = {};
+        state.resolutions = [];
+        renderAll();
+        saveEvents();
+        saveResolutions();
+      }
+    });
+  });
+</script>
+</body>
+</html>
